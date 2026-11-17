@@ -1,5 +1,7 @@
 # AI Development Lifecycle and Responsible Deployment Readiness Assistant
 
+https://ai-readiness-portal-l1xv.onrender.com/
+
 A full-stack university AI-governance platform modelling a 6-stage AI development lifecycle, enforcing server-side readiness checks via a forward-chaining production rule engine, grounding policy guidance via from-scratch BM25 and TF-IDF cosine hybrid retrieval, comparing against a regex/checklist baseline on an independent 36-case demonstration benchmark, and maintaining an accountable, hash-chained audit trail.
 
 > **Demonstration Notice:** Seeded users, projects, policy clauses, exceptions, and benchmark results are marked `DEMO` (`is_demo = true`) and are **not** real institutional approvals or governance decisions.
