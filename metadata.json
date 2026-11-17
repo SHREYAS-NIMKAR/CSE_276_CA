@@ -1,0 +1,6 @@
+{
+  "name": "AI Development Lifecycle and Responsible Deployment Readiness Assistant",
+  "description": "University AI governance system with forward-chaining rule checking, grounded policy retrieval, benchmark evaluation, and accountable human review.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
