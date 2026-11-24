@@ -541,6 +541,7 @@ export default function App() {
               knowledge={knowledge}
               user={user}
               usersDirectory={usersDirectory}
+              settings={settings}
               detailedMode={detailedMode}
               onProjectsChanged={refreshProjects}
               onNavigateToPolicy={(cid) => {

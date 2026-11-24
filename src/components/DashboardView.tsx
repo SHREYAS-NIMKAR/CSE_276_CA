@@ -5,6 +5,8 @@ import {
   SystemSettings,
   User,
 } from '../types';
+import { buildOverallSuggestion } from '../utils/overallSuggestion';
+import { OverallSuggestionCard } from './OverallSuggestionCard';
 import {
   DemoTag,
   HelpTooltip,
@@ -210,28 +212,15 @@ export function DashboardView({
         </div>
       </div>
 
-      {/* What should I do next? Panel */}
-      <div className="bg-white border border-slate-200 rounded-xl p-5">
-        <h2 className="text-lg font-bold text-[#0B2545] mb-3">What should I do next?</h2>
-        {assessment.nextActions.length === 0 ? (
-          <p className="text-sm text-slate-600">
-            No blocking actions remain for this project.
-          </p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {assessment.nextActions.map((act) => (
-              <div key={act.priority} className="p-4 rounded-lg bg-slate-50 border border-slate-200">
-                <div className="text-xs font-semibold text-[#13A3A3] mb-1">
-                  Action {act.priority} · Stage {act.stage}
-                  {detailedMode ? ` · ${act.ruleId}` : ''}
-                </div>
-                <div className="text-sm font-bold text-[#0B2545]">{act.title}</div>
-                <p className="text-sm text-slate-600 mt-1">{act.detail}</p>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      {/* Overall Suggestion Panel */}
+      <OverallSuggestionCard
+        suggestion={buildOverallSuggestion({
+          assessment,
+          project: selectedProject,
+          settings,
+        })}
+        onOpenWorkspace={() => onOpenProjectWorkspace(selectedProject.id)}
+      />
 
       {/* 4 Dashboard Tabs */}
       <div className="bg-white border border-slate-200 rounded-xl">

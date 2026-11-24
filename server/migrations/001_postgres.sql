@@ -241,12 +241,14 @@ BEGIN
   v_hash := COALESCE(
     p_entry_hash_override,
     encode(
-      digest(
-        v_next_seq::text || '|' || p_created_at || '|' || COALESCE(p_user_id, '') || '|' ||
-        COALESCE(p_user_role, '') || '|' || p_action || '|' || COALESCE(p_project_id, '') || '|' ||
-        p_details || '|' || COALESCE(p_rationale, '') || '|' || COALESCE(p_expiry_date, '') || '|' ||
-        COALESCE(p_source_ip, '') || '|' || v_last_hash,
-        'sha256'
+      sha256(
+        convert_to(
+          v_next_seq::text || '|' || p_created_at || '|' || COALESCE(p_user_id, '') || '|' ||
+          COALESCE(p_user_role, '') || '|' || p_action || '|' || COALESCE(p_project_id, '') || '|' ||
+          p_details || '|' || COALESCE(p_rationale, '') || '|' || COALESCE(p_expiry_date, '') || '|' ||
+          COALESCE(p_source_ip, '') || '|' || v_last_hash,
+          'UTF8'
+        )
       ),
       'hex'
     )

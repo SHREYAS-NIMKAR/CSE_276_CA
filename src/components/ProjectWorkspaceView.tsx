@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   CheckCircle2,
   Copy,
@@ -19,8 +19,11 @@ import {
   ProjectItem,
   ReviewCommentItem,
   RiskAcceptanceItem,
+  SystemSettings,
   User,
 } from '../types';
+import { buildOverallSuggestion } from '../utils/overallSuggestion';
+import { OverallSuggestionCard } from './OverallSuggestionCard';
 import {
   DemoTag,
   HelpTooltip,
@@ -53,6 +56,7 @@ export function ProjectWorkspaceView({
   knowledge,
   user,
   usersDirectory,
+  settings,
   detailedMode,
   onProjectsChanged,
   onNavigateToPolicy,
@@ -63,6 +67,7 @@ export function ProjectWorkspaceView({
   knowledge: KnowledgeGraphData;
   user: User;
   usersDirectory: User[];
+  settings?: SystemSettings;
   detailedMode: boolean;
   onProjectsChanged: () => Promise<void>;
   onNavigateToPolicy: (clauseId?: string) => void;
@@ -76,6 +81,7 @@ export function ProjectWorkspaceView({
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [expandedClauses, setExpandedClauses] = useState<Record<string, boolean>>({});
   const [jsonLdPreview, setJsonLdPreview] = useState<string | null>(null);
+  const tabsRef = useRef<HTMLDivElement | null>(null);
 
   // Evidence edit local buffers
   const [notesDraft, setNotesDraft] = useState<Record<string, string>>({});
@@ -591,6 +597,20 @@ export function ProjectWorkspaceView({
               </div>
             )}
 
+            <OverallSuggestionCard
+              suggestion={buildOverallSuggestion({
+                assessment,
+                evidence: detail.evidence,
+                fairnessCheck: detail.fairnessCheck,
+                project: detail.project,
+                settings,
+              })}
+              onNavigateTab={(nextTab) => {
+                setTab(nextTab);
+                tabsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+            />
+
             {assessment.releaseLockedReasons.length > 0 && (
               <div className="p-4 rounded-lg bg-slate-50 border border-slate-200">
                 <div className="text-sm font-bold text-[#0B2545] mb-1">
@@ -663,7 +683,7 @@ export function ProjectWorkspaceView({
           </div>
 
           {/* 6 Workspace Tabs */}
-          <div className="bg-white border border-slate-200 rounded-xl">
+          <div ref={tabsRef} className="bg-white border border-slate-200 rounded-xl">
             <div
               role="tablist"
               aria-label="Project workspace sections"
