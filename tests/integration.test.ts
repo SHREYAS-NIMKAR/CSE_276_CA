@@ -611,6 +611,53 @@ test('Integration: Visitor tracking, access requests, password reset, session re
     assert.equal(fullCsvRes.status, 200);
     const fullCsv = await fullCsvRes.text();
     assert.equal(fullCsv.includes('DEMONSTRATION DATA'), true);
+
+    // 9. PROJECT_OWNER never sees Admin login/system audit entries in /api/audit or /api/audit/export.csv
+    const guestCreateRes = await fetch(`${srv.baseUrl}/api/users`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Session-Token': realAdmin.sessionToken,
+        'X-CSRF-Token': realAdmin.csrfToken,
+      },
+      body: JSON.stringify({
+        email: 'guest.owner@demo.edu',
+        full_name: 'Guest Owner',
+        password: 'GuestOwner!2026',
+        role: 'PROJECT_OWNER',
+      }),
+    });
+    assert.equal(guestCreateRes.status, 201);
+
+    const guestLoginRes = await fetch(`${srv.baseUrl}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'guest.owner@demo.edu', password: 'GuestOwner!2026' }),
+    });
+    assert.equal(guestLoginRes.status, 200);
+    const guestJson = (await guestLoginRes.json()) as { sessionToken: string };
+
+    const guestAuditRes = await fetch(`${srv.baseUrl}/api/audit?includeDemo=true`, {
+      headers: { 'X-Session-Token': guestJson.sessionToken },
+    });
+    assert.equal(guestAuditRes.status, 200);
+    const guestAudit = (await guestAuditRes.json()) as {
+      entries: Array<{ user_email: string; action: string; user_role: string }>;
+    };
+    assert.ok(guestAudit.entries.length >= 1);
+    assert.equal(
+      guestAudit.entries.some((e) => e.user_email === 'shreyas.nimkar2006@gmail.com' || e.user_role === 'ADMIN'),
+      false
+    );
+    assert.equal(guestAudit.entries.some((e) => e.action === 'USER_CREATED'), false);
+
+    const guestCsvRes = await fetch(`${srv.baseUrl}/api/audit/export.csv?includeDemo=true`, {
+      headers: { 'X-Session-Token': guestJson.sessionToken },
+    });
+    assert.equal(guestCsvRes.status, 200);
+    const guestCsv = await guestCsvRes.text();
+    assert.equal(guestCsv.includes('shreyas.nimkar2006@gmail.com'), false);
+    assert.equal(guestCsv.includes('USER_CREATED'), false);
   } finally {
     await srv.close();
   }

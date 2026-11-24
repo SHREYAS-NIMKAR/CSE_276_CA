@@ -2018,6 +2018,25 @@ export function createApp(db: DbClient, config: AppConfig): Express {
   });
 
   // ---- AUDIT LOG ----
+  async function loadScopedAuditRows(user: UserRecord, order: 'ASC' | 'DESC') {
+    let rows = await db.query<AuditEntry>(
+      `SELECT * FROM audit_logs ORDER BY seq_num ${order}`
+    );
+    if (user.role === 'PROJECT_OWNER') {
+      const ownProjs = await db.query<{ id: string }>(
+        `SELECT id FROM projects WHERE owner_id = ?`,
+        [user.id]
+      );
+      const ownSet = new Set(ownProjs.map((p) => p.id));
+      rows = rows.filter(
+        (r) => r.user_id === user.id || (r.project_id !== null && ownSet.has(r.project_id))
+      );
+    } else if (user.role !== 'ADMIN') {
+      rows = rows.filter((r) => r.user_id === user.id || r.project_id !== null);
+    }
+    return rows;
+  }
+
   app.get('/api/audit', requireAuth, async (req: AuthenticatedRequest, res: Response) => {
     const search = typeof req.query.q === 'string' ? req.query.q.trim().toLowerCase() : '';
     const action = typeof req.query.action === 'string' ? req.query.action.trim() : '';
@@ -2029,17 +2048,10 @@ export function createApp(db: DbClient, config: AppConfig): Express {
         ? false
         : Boolean(req.user!.is_demo);
 
-    let rows = await db.query<AuditEntry>(`SELECT * FROM audit_logs ORDER BY seq_num DESC LIMIT 300`);
+    let rows = await loadScopedAuditRows(req.user!, 'DESC');
     const hiddenDemoCount = includeDemo ? 0 : rows.filter((r) => Boolean(r.is_demo)).length;
     if (!includeDemo) {
       rows = rows.filter((r) => !Boolean(r.is_demo));
-    }
-    if (req.user!.role === 'PROJECT_OWNER') {
-      const ownProjs = await db.query<{ id: string }>(`SELECT id FROM projects WHERE owner_id = ?`, [
-        req.user!.id,
-      ]);
-      const ownSet = new Set(ownProjs.map((p) => p.id));
-      rows = rows.filter((r) => !r.project_id || ownSet.has(r.project_id) || r.user_id === req.user!.id);
     }
     if (action) rows = rows.filter((r) => r.action === action);
     if (projectId) rows = rows.filter((r) => r.project_id === projectId);
@@ -2052,6 +2064,7 @@ export function createApp(db: DbClient, config: AppConfig): Express {
           (r.source_ip ?? '').toLowerCase().includes(search)
       );
     }
+    rows = rows.slice(0, 300);
     res.json({
       entries: rows.map((r) => ({ ...r, is_demo: Boolean(r.is_demo) })),
       hiddenDemoCount,
@@ -2090,7 +2103,7 @@ export function createApp(db: DbClient, config: AppConfig): Express {
         : req.query.includeDemo === 'false'
         ? false
         : Boolean(req.user!.is_demo);
-    let rows = await db.query<AuditEntry>(`SELECT * FROM audit_logs ORDER BY seq_num ASC`);
+    let rows = await loadScopedAuditRows(req.user!, 'ASC');
     if (!includeDemo) {
       rows = rows.filter((r) => !Boolean(r.is_demo));
     }
