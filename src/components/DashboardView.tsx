@@ -31,6 +31,7 @@ export function DashboardView({
   onOpenProjects,
   onOpenReviewerQueue,
   onRunCheck,
+  onLoadSamples,
   checking,
 }: {
   projects: ProjectItem[];
@@ -45,27 +46,49 @@ export function DashboardView({
   onOpenProjects?: () => void;
   onOpenReviewerQueue?: () => void;
   onRunCheck: () => void;
+  onLoadSamples?: () => Promise<void>;
   checking: boolean;
 }) {
   const [tab, setTab] = useState<DashTab>('lifecycle');
+  const [loadingSamples, setLoadingSamples] = useState(false);
   const selectedProject = projects.find((p) => p.id === selectedProjectId) ?? projects[0] ?? null;
+  const canCreateProjects = user.role === 'ADMIN' || user.role === 'PROJECT_OWNER';
 
   if (!selectedProject || !assessment) {
     return (
       <div className="bg-white border border-slate-200 rounded-xl p-8 text-center">
         <h1 className="text-xl font-bold text-[#0B2545] mb-2">No AI Projects Yet</h1>
         <p className="text-slate-600 mb-5 max-w-lg mx-auto">
-          Your workspace is ready for real projects. Register your first AI project to begin lifecycle evidence tracking, risk checks, and readiness reporting.
+          Your workspace is ready for real projects. Register your first AI project—or load 3 beginner practice demo projects to explore how readiness checks and Overall Suggestions work.
         </p>
-        {onOpenProjects && (
-          <button
-            type="button"
-            onClick={onOpenProjects}
-            className="px-4 py-2 bg-[#0B2545] text-white text-sm font-medium rounded-lg hover:bg-[#133863] cursor-pointer"
-          >
-            Go to Projects &amp; Register First AI Project
-          </button>
-        )}
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          {onOpenProjects && (
+            <button
+              type="button"
+              onClick={onOpenProjects}
+              className="px-4 py-2 bg-[#0B2545] text-white text-sm font-medium rounded-lg hover:bg-[#133863] cursor-pointer whitespace-nowrap"
+            >
+              Go to Projects &amp; Register First AI Project
+            </button>
+          )}
+          {canCreateProjects && onLoadSamples && (
+            <button
+              type="button"
+              disabled={loadingSamples}
+              onClick={async () => {
+                setLoadingSamples(true);
+                try {
+                  await onLoadSamples();
+                } finally {
+                  setLoadingSamples(false);
+                }
+              }}
+              className="px-4 py-2 bg-white border border-slate-300 text-[#0B2545] text-sm font-medium rounded-lg hover:bg-slate-50 disabled:opacity-60 cursor-pointer whitespace-nowrap"
+            >
+              {loadingSamples ? 'Loading demo projects...' : 'Load 3 Beginner Demo Projects'}
+            </button>
+          )}
+        </div>
       </div>
     );
   }

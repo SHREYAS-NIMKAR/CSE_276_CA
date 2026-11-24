@@ -223,7 +223,8 @@ export function buildOverallSuggestion(params: {
     plainSummary = `${verified} of ${total} items are verified${awaitingVerification > 0 ? ` and ${awaitingVerification} more are awaiting reviewer verification` : ''}. No blocking gates are holding release back.`;
   } else if (scoreHighGateLocked) {
     tone = 'blocked';
-    headline = `Strong overall score (${readinessPct}%), but ${missingBlocking.length || 1} critical check still blocks release.`;
+    const count = missingBlocking.length || 1;
+    headline = `Strong overall score (${readinessPct}%), but ${count} critical ${count === 1 ? 'check still blocks' : 'checks still block'} release.`;
     plainSummary = `${verified} of ${total} items are verified, which meets the readiness target, but release stays locked until every mandatory blocking check (or numeric threshold) passes.`;
   } else if (verified === 0 && awaitingVerification > 0) {
     tone = 'blocked';

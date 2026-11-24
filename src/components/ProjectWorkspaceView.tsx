@@ -9,6 +9,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { apiRequest, downloadAuthedFile } from '../api';
+import { BEGINNER_EXAMPLES } from '../data/beginnerExamples';
 import {
   AssessmentResult,
   EvidenceItem,
@@ -127,6 +128,59 @@ export function ProjectWorkspaceView({
   const [newWrapper, setNewWrapper] = useState(false);
   const [newAdminScript, setNewAdminScript] = useState(false);
   const [newPopulation, setNewPopulation] = useState('Undergraduate students');
+  const [selectedTemplateKey, setSelectedTemplateKey] = useState<string>('blank');
+  const [loadingSamples, setLoadingSamples] = useState(false);
+
+  function applyStarterTemplate(key: string) {
+    setSelectedTemplateKey(key);
+    if (key === 'blank') {
+      setNewName('');
+      setNewDesc('');
+      setNewAutonomy('advisory');
+      setNewSensitivity('medium');
+      setNewAcademic(false);
+      setNewSynthetic(false);
+      setNewWrapper(false);
+      setNewAdminScript(false);
+      setNewPopulation('Undergraduate students');
+      return;
+    }
+    const found = BEGINNER_EXAMPLES.find((ex) => ex.key === key);
+    if (!found) return;
+    setNewName(found.prefill.name);
+    setNewDesc(found.prefill.description);
+    setNewAutonomy(found.prefill.autonomy);
+    setNewSensitivity(found.prefill.sensitivity);
+    setNewAcademic(found.prefill.affectsAcademicStanding);
+    setNewSynthetic(found.prefill.usesSyntheticData);
+    setNewWrapper(found.prefill.usesThirdPartyWrapper);
+    setNewAdminScript(found.prefill.isLowRiskAdminScript);
+    setNewPopulation(found.prefill.targetPopulation);
+  }
+
+  async function handleLoadBeginnerSamples() {
+    setLoadingSamples(true);
+    setError(null);
+    try {
+      const res = await apiRequest<{ createdCount: number; primaryProjectId: string }>(
+        '/projects/load-samples',
+        { method: 'POST', body: JSON.stringify({ key: 'all' }) }
+      );
+      await onProjectsChanged();
+      if (res.primaryProjectId) {
+        onSelectProject(res.primaryProjectId);
+      }
+      flash(
+        res.createdCount > 0
+          ? `Loaded ${res.createdCount} beginner practice demo project(s)`
+          : 'Beginner practice demo projects are already loaded'
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Unable to load practice demo projects.');
+    } finally {
+      setLoadingSamples(false);
+    }
+  }
 
   async function loadDetail(id: string) {
     if (!id) return;
@@ -1652,17 +1706,27 @@ export function ProjectWorkspaceView({
       ) : (
         <div className="bg-white border border-slate-200 rounded-xl p-8 text-center">
           <h2 className="text-lg font-bold text-[#0B2545] mb-2">No AI Projects Registered</h2>
-          <p className="text-sm text-slate-600 mb-5 max-w-md mx-auto">
-            Register your first AI system to track lifecycle evidence, evaluate governance rules, and generate readiness reports.
+          <p className="text-sm text-slate-600 mb-5 max-w-lg mx-auto">
+            Register your own AI system—or load 3 beginner practice demo projects (one ready, one needing fixes, and one exception example) to try out readiness checking first.
           </p>
           {canCreateProject && (
-            <button
-              type="button"
-              onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0B2545] text-white text-sm font-medium rounded-lg hover:bg-[#133863] cursor-pointer"
-            >
-              <Plus className="w-4 h-4" /> Register First AI Project
-            </button>
+            <div className="flex flex-wrap items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => setShowCreateModal(true)}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#0B2545] text-white text-sm font-medium rounded-lg hover:bg-[#133863] cursor-pointer whitespace-nowrap"
+              >
+                <Plus className="w-4 h-4" /> Register First AI Project
+              </button>
+              <button
+                type="button"
+                disabled={loadingSamples}
+                onClick={handleLoadBeginnerSamples}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-white border border-slate-300 text-[#0B2545] text-sm font-medium rounded-lg hover:bg-slate-50 disabled:opacity-60 cursor-pointer whitespace-nowrap"
+              >
+                {loadingSamples ? 'Loading demo projects...' : 'Load 3 Beginner Demo Projects'}
+              </button>
+            </div>
           )}
         </div>
       )}
@@ -1679,6 +1743,32 @@ export function ProjectWorkspaceView({
             <h2 id="new-proj-title" className="text-lg font-bold text-[#0B2545]">
               Register New AI Project
             </h2>
+            <div className="space-y-1.5">
+              <span className="block text-xs font-medium text-slate-600">
+                Prefill with a beginner example (optional):
+              </span>
+              <div className="flex flex-wrap gap-1.5 p-1 bg-slate-100 rounded-lg border border-slate-200">
+                {[
+                  { key: 'blank', label: 'Blank' },
+                  { key: 'ready', label: 'Study Planner' },
+                  { key: 'needs_fixes', label: 'Essay Screener' },
+                  { key: 'exception', label: 'Campus Chatbot' },
+                ].map((tpl) => (
+                  <button
+                    key={tpl.key}
+                    type="button"
+                    onClick={() => applyStarterTemplate(tpl.key)}
+                    className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap ${
+                      selectedTemplateKey === tpl.key
+                        ? 'bg-white text-[#0B2545] shadow-sm'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    {tpl.label}
+                  </button>
+                ))}
+              </div>
+            </div>
             <form onSubmit={handleCreateProject} className="space-y-3">
               <div>
                 <label htmlFor="np-name" className="block text-xs font-medium text-slate-700 mb-1">

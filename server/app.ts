@@ -29,6 +29,7 @@ import { ARTEFACTS, buildProjectJsonLd, getKnowledgeGraphPayload } from './knowl
 import { buildCsv, buildOpenApiSpec, generateProjectReportPdf } from './reports';
 import { retrievePolicyClauses } from './retrieval';
 import { DEFAULT_SETTINGS } from './seedData';
+import { loadBeginnerSampleProjects, SampleProjectKey } from './sampleProjects';
 import { runSelfTestSuite } from './selfTests';
 import {
   AssessmentResult,
@@ -793,6 +794,26 @@ export function createApp(db: DbClient, config: AppConfig): Express {
 
       const assessment = await runAndPersistAssessment(db, id, req.user!, getClientIp(req));
       res.status(201).json({ id, assessment });
+    }
+  );
+
+  app.post(
+    '/api/projects/load-samples',
+    requireAuth,
+    requireRole('PROJECT_OWNER', 'ADMIN'),
+    async (req: AuthenticatedRequest, res: Response) => {
+      const rawKey = typeof req.body?.key === 'string' ? req.body.key : 'all';
+      const validKeys = new Set(['all', 'ready', 'needs_fixes', 'exception']);
+      if (!validKeys.has(rawKey)) {
+        return res.status(400).json({ error: 'Invalid example key.' });
+      }
+      const result = await loadBeginnerSampleProjects(
+        db,
+        req.user!,
+        rawKey as SampleProjectKey | 'all',
+        getClientIp(req)
+      );
+      res.status(201).json(result);
     }
   );
 

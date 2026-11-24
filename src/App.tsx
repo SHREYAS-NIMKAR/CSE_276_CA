@@ -243,6 +243,21 @@ export default function App() {
     }
   }
 
+  async function handleLoadSampleProjects(key: 'ready' | 'needs_fixes' | 'exception' | 'all' = 'all') {
+    const res = await apiRequest<{ createdCount: number; primaryProjectId: string }>(
+      '/projects/load-samples',
+      {
+        method: 'POST',
+        body: JSON.stringify({ key }),
+      }
+    );
+    await refreshProjects();
+    if (res.primaryProjectId) {
+      setSelectedProjectId(res.primaryProjectId);
+    }
+    setPage('projects');
+  }
+
   if (authLoading) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-600">
@@ -519,6 +534,7 @@ export default function App() {
                 user.role !== 'PROJECT_OWNER' ? () => setPage('queue') : undefined
               }
               onRunCheck={handleDashboardRunCheck}
+              onLoadSamples={() => handleLoadSampleProjects('all')}
               checking={checkingDash}
             />
           )}
@@ -620,7 +636,13 @@ export default function App() {
             />
           )}
 
-          {page === 'help' && <HelpGlossaryView onOpenTour={() => setTourOpen(true)} />}
+          {page === 'help' && (
+            <HelpGlossaryView
+              onOpenTour={() => setTourOpen(true)}
+              user={user}
+              onLoadExample={(key) => handleLoadSampleProjects(key)}
+            />
+          )}
         </main>
       </div>
 
