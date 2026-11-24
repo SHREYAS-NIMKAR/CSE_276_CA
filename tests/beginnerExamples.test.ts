@@ -5,7 +5,7 @@ import { createApp } from '../server/app';
 import { loadConfig } from '../server/config';
 import { createDatabase } from '../server/db';
 import { seedDatabase } from '../server/seed';
-import { BEGINNER_EXAMPLES, PARAMETER_GUIDE } from '../src/data/beginnerExamples';
+import { BEGINNER_EXAMPLES, PARAMETER_GUIDE } from '../src/utils/beginnerExamples';
 
 async function startCleanServer() {
   const db = await createDatabase(':memory:');

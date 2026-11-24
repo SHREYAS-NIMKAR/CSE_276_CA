@@ -9,7 +9,7 @@ import {
   Upload,
 } from 'lucide-react';
 import { apiRequest, downloadAuthedFile } from '../api';
-import { BEGINNER_EXAMPLES } from '../data/beginnerExamples';
+import { BEGINNER_EXAMPLES } from '../utils/beginnerExamples';
 import {
   AssessmentResult,
   EvidenceItem,

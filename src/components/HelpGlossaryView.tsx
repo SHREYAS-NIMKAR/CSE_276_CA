@@ -4,7 +4,7 @@ import {
   BEGINNER_EXAMPLES,
   BeginnerExampleKey,
   PARAMETER_GUIDE,
-} from '../data/beginnerExamples';
+} from '../utils/beginnerExamples';
 import { User } from '../types';
 
 const GLOSSARY_TERMS = [
